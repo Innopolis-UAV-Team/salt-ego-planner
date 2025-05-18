@@ -29,9 +29,10 @@ class VelocityToPositionConverter:
 
     def generate_desired_position(self, control_velocity):
         desired_pose = PoseStamped()
-        desired_pose.pose.position.x = 0 + random.uniform(-0.01, 0.01) #self.local_pose.pose.position.x + self.desired_velocity.twist.linear.x #+ self.repulsion_vector.x
-        desired_pose.pose.position.y = 0 + random.uniform(-0.01, 0.01) #self.local_pose.pose.position.y + self.desired_velocity.twist.linear.y #+ self.repulsion_vector.y
-        desired_pose.pose.position.z = 1 + random.uniform(-0.01, 0.01) #self.local_pose.pose.position.z + self.desired_velocity.twist.linear.z #+ self.repulsion_vector.z
+        # 1 + random.uniform(-0.01, 0.01) #
+        desired_pose.pose.position.x = self.local_pose.pose.position.x + self.desired_velocity.twist.linear.x #+ self.repulsion_vector.x
+        desired_pose.pose.position.y = self.local_pose.pose.position.y + self.desired_velocity.twist.linear.y #+ self.repulsion_vector.y
+        desired_pose.pose.position.z = self.local_pose.pose.position.z + self.desired_velocity.twist.linear.z #+ self.repulsion_vector.z
         desired_pose.pose.orientation = utils.rotate_quaternion_around_z(self.local_pose.pose.orientation, self.desired_velocity.twist.angular.z)
         return desired_pose
 

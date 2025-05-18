@@ -10,7 +10,7 @@ class RCToVelocityConverter:
     def __init__(self):
         rospy.init_node('rc_to_velocity_converter', anonymous=True)
 
-        self.horizontal_speed_koef = rospy.get_param('/rc_to_velocity_converter/horizontal_speed', 4.0)
+        self.horizontal_speed_koef = rospy.get_param('/rc_to_velocity_converter/horizontal_speed', 6.0)
         self.vertical_speed_koef = rospy.get_param('/rc_to_velocity_converter/vertical_speed', 1.5)
         self.angle_speed_koef = rospy.get_param('/rc_to_velocity_converter/angle_speed', 2.0)
 
