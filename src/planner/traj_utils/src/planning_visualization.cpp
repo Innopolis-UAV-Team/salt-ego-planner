@@ -13,6 +13,11 @@ namespace ego_planner
     init_list_pub = nh.advertise<visualization_msgs::Marker>("init_list", 2);
     optimal_list_pub = nh.advertise<visualization_msgs::Marker>("optimal_list", 2);
     a_star_list_pub = nh.advertise<visualization_msgs::Marker>("a_star_list", 20);
+    
+    // Диагностические publishers
+    current_odom_pub = nh.advertise<visualization_msgs::Marker>("debug/current_odom", 2);
+    planned_pos_pub = nh.advertise<visualization_msgs::Marker>("debug/planned_position", 2);
+    dense_traj_pub = nh.advertise<visualization_msgs::Marker>("debug/dense_trajectory", 2);
   }
 
   // // real ids used: {id, id+1000}
@@ -236,6 +241,78 @@ namespace ego_planner
     generateArrowDisplayArray(array, list, scale, color, id);
 
     pub.publish(array);
+  }
+
+  // Диагностические функции визуализации
+  
+  void PlanningVisualization::displayCurrentOdomPosition(Eigen::Vector3d odom_pos, int id)
+  {
+    visualization_msgs::Marker sphere;
+    sphere.header.frame_id = "world";
+    sphere.header.stamp = ros::Time::now();
+    sphere.type = visualization_msgs::Marker::SPHERE;
+    sphere.action = visualization_msgs::Marker::ADD;
+    sphere.id = id;
+
+    sphere.pose.orientation.w = 1.0;
+    sphere.color.r = 0.0;  // Зелёный - реальная позиция
+    sphere.color.g = 1.0;
+    sphere.color.b = 0.0;
+    sphere.color.a = 0.8;
+    sphere.scale.x = 0.3;  // Больше для видимости
+    sphere.scale.y = 0.3;
+    sphere.scale.z = 0.3;
+    sphere.pose.position.x = odom_pos(0);
+    sphere.pose.position.y = odom_pos(1);
+    sphere.pose.position.z = odom_pos(2);
+
+    current_odom_pub.publish(sphere);
+  }
+
+  void PlanningVisualization::displayPlannedPosition(Eigen::Vector3d planned_pos, int id)
+  {
+    visualization_msgs::Marker sphere;
+    sphere.header.frame_id = "world";
+    sphere.header.stamp = ros::Time::now();
+    sphere.type = visualization_msgs::Marker::SPHERE;
+    sphere.action = visualization_msgs::Marker::ADD;
+    sphere.id = id;
+
+    sphere.pose.orientation.w = 1.0;
+    sphere.color.r = 1.0;  // Красный - плановая позиция
+    sphere.color.g = 0.0;
+    sphere.color.b = 0.0;
+    sphere.color.a = 0.6;
+    sphere.scale.x = 0.25;
+    sphere.scale.y = 0.25;
+    sphere.scale.z = 0.25;
+    sphere.pose.position.x = planned_pos(0);
+    sphere.pose.position.y = planned_pos(1);
+    sphere.pose.position.z = planned_pos(2);
+
+    planned_pos_pub.publish(sphere);
+  }
+
+  void PlanningVisualization::displayDenseTrajectory(const UniformBspline& traj, double duration, int id)
+  {
+    if (dense_traj_pub.getNumSubscribers() == 0) {
+      return;
+    }
+
+    vector<Eigen::Vector3d> traj_points;
+    double dt = 0.05;  // Шаг 50мс - достаточно плотно
+    
+    for (double t = 0; t < duration; t += dt) {
+      traj_points.push_back(traj.evaluateDeBoorT(t));
+    }
+    
+    // Добавить последнюю точку
+    if (duration > 0) {
+      traj_points.push_back(traj.evaluateDeBoorT(duration));
+    }
+    
+    Eigen::Vector4d color(1.0, 0.5, 0.0, 0.8);  // Оранжевый - плотная траектория
+    displayMarkerList(dense_traj_pub, traj_points, 0.08, color, id);
   }
 
   // PlanningVisualization::

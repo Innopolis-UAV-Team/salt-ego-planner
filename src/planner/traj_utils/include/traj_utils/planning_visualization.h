@@ -27,6 +27,11 @@ namespace ego_planner
     ros::Publisher a_star_list_pub;
     ros::Publisher guide_vector_pub;
     ros::Publisher intermediate_state_pub;
+    
+    // Диагностические publishers
+    ros::Publisher current_odom_pub;      // Реальная позиция из одометрии
+    ros::Publisher planned_pos_pub;       // Плановая позиция из траектории
+    ros::Publisher dense_traj_pub;        // Плотная визуализация траектории
 
   public:
     PlanningVisualization(/* args */) {}
@@ -47,6 +52,12 @@ namespace ego_planner
     void displayOptimalList(Eigen::MatrixXd optimal_pts, int id);
     void displayAStarList(std::vector<std::vector<Eigen::Vector3d>> a_star_paths, int id);
     void displayArrowList(ros::Publisher &pub, const vector<Eigen::Vector3d> &list, double scale, Eigen::Vector4d color, int id);
+    
+    // Новые диагностические функции
+    void displayCurrentOdomPosition(Eigen::Vector3d odom_pos, int id);
+    void displayPlannedPosition(Eigen::Vector3d planned_pos, int id);
+    void displayDenseTrajectory(const UniformBspline& traj, double duration, int id);
+    
     // void displayIntermediateState(ros::Publisher& intermediate_pub, ego_planner::BsplineOptimizer::Ptr optimizer, double sleep_time, const int start_iteration);
     // void displayNewArrow(ros::Publisher& guide_vector_pub, ego_planner::BsplineOptimizer::Ptr optimizer);
   };

@@ -295,6 +295,13 @@ namespace ego_planner
 
       Eigen::Vector3d pos = info->position_traj_.evaluateDeBoorT(t_cur);
 
+      // 🎨 ДИАГНОСТИЧЕСКАЯ ВИЗУАЛИЗАЦИЯ
+      // Показываем где дрон РЕАЛЬНО (зелёный) vs где ПЛАНИРУЕТСЯ (красный)
+      visualization_->displayCurrentOdomPosition(odom_pos_, 0);
+      visualization_->displayPlannedPosition(pos, 0);
+      // Плотная траектория (оранжевая)
+      visualization_->displayDenseTrajectory(info->position_traj_, info->duration_, 0);
+
       /* && (end_pt_ - pos).norm() < 0.5 */
       if (t_cur > info->duration_ - 1e-2)
       {
