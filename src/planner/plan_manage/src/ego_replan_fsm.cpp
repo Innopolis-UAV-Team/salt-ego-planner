@@ -302,6 +302,22 @@ namespace ego_planner
       // Плотная траектория (оранжевая)
       visualization_->displayDenseTrajectory(info->position_traj_, info->duration_, 0);
 
+      // 🛑 ПРОВЕРКА: Дрон застрял или не в OFFBOARD режиме
+      // Если дрон физически не движется, но траектория "убегает" по времени
+      double tracking_error = (odom_pos_ - pos).norm();
+      double velocity_magnitude = odom_vel_.norm();
+      
+      // Критическое отклонение: дрон не двигается, но траектория убежала
+      if (tracking_error > 1.0 && velocity_magnitude < 0.1) {
+        ROS_WARN_THROTTLE(1.0, "🛑 Drone not moving but trajectory running! Error: %.2fm, vel: %.2fm/s", 
+                          tracking_error, velocity_magnitude);
+        ROS_WARN_THROTTLE(1.0, "   Possible: not in OFFBOARD mode or motors disabled. Replanning from current position...");
+        
+        // Экстренное перепланирование от РЕАЛЬНОЙ позиции
+        changeFSMExecState(REPLAN_TRAJ, "DRONE_NOT_MOVING");
+        break;
+      }
+
       /* && (end_pt_ - pos).norm() < 0.5 */
       if (t_cur > info->duration_ - 1e-2)
       {
@@ -358,9 +374,32 @@ namespace ego_planner
 
     //cout << "info->velocity_traj_=" << info->velocity_traj_.get_control_points() << endl;
 
-    start_pt_ = info->position_traj_.evaluateDeBoorT(t_cur);
-    start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_cur);
-    start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
+    // 🔧 УМНАЯ ЛОГИКА: Использовать реальную одометрию если дрон застрял
+    Eigen::Vector3d planned_pos = info->position_traj_.evaluateDeBoorT(t_cur);
+    double tracking_error = (odom_pos_ - planned_pos).norm();
+    double velocity_magnitude = odom_vel_.norm();
+    
+    // Если дрон не движется И траектория сильно убежала - использовать РЕАЛЬНУЮ позицию
+    if (tracking_error > 0.8 && velocity_magnitude < 0.15) {
+      ROS_WARN("🔧 Using REAL odometry for replanning (drone not moving, error: %.2fm)", tracking_error);
+      start_pt_ = odom_pos_;      // ✅ Реальная позиция
+      start_vel_ = odom_vel_;     // ✅ Реальная скорость (почти ноль)
+      start_acc_.setZero();       // ✅ Ускорение = 0
+    } 
+    // Если отклонение умеренное - плавное смешивание
+    else if (tracking_error > 0.3 && tracking_error <= 0.8) {
+      double blend = 0.6;  // 60% реальной, 40% плановой для плавности
+      start_pt_ = blend * odom_pos_ + (1.0 - blend) * planned_pos;
+      start_vel_ = blend * odom_vel_ + (1.0 - blend) * info->velocity_traj_.evaluateDeBoorT(t_cur);
+      start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
+      ROS_INFO_THROTTLE(1.0, "🔀 Blending real and planned position (error: %.2fm)", tracking_error);
+    }
+    // Нормальный случай - использовать плановую траекторию
+    else {
+      start_pt_ = planned_pos;
+      start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_cur);
+      start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
+    }
 
     bool success = callReboundReplan(false, false);
 
