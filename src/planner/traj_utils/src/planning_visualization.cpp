@@ -293,7 +293,7 @@ namespace ego_planner
     planned_pos_pub.publish(sphere);
   }
 
-  void PlanningVisualization::displayDenseTrajectory(const UniformBspline& traj, double duration, int id)
+  void PlanningVisualization::displayDenseTrajectory(UniformBspline traj, double duration, int id)
   {
     if (dense_traj_pub.getNumSubscribers() == 0) {
       return;

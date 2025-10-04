@@ -56,7 +56,7 @@ namespace ego_planner
     // Новые диагностические функции
     void displayCurrentOdomPosition(Eigen::Vector3d odom_pos, int id);
     void displayPlannedPosition(Eigen::Vector3d planned_pos, int id);
-    void displayDenseTrajectory(const UniformBspline& traj, double duration, int id);
+    void displayDenseTrajectory(UniformBspline traj, double duration, int id);
     
     // void displayIntermediateState(ros::Publisher& intermediate_pub, ego_planner::BsplineOptimizer::Ptr optimizer, double sleep_time, const int start_iteration);
     // void displayNewArrow(ros::Publisher& guide_vector_pub, ego_planner::BsplineOptimizer::Ptr optimizer);
